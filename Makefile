@@ -1,9 +1,15 @@
+#TODO: Add a directory for the compiled objects, as opposed to just cluttering the working directory
+#
+#Usage: Set ARDDIR to the directory containing the github repository found here:
+#https://github.com/arduino/Arduino
+#There aer some other steps to set the repository up for building for the Due, but I won't cover them here.
 ARDDIR=/home/michael/Documents/Programming/arduino/Arduino
 SAMDIR=$(ARDDIR)/build/linux/work/hardware/arduino/sam
 SYSDIR=$(SAMDIR)/system
 CC=$(ARDDIR)/build/linux/work/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-gcc
 CXX=$(ARDDIR)/build/linux/work/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-g++
 CXXAR=$(ARDDIR)/build/linux/work/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-ar
+CXXOBJCOPY=$(ARDDIR)/build/linux/work/hardware/tools/g++_arm_none_eabi/bin/arm-none-eabi-objcopy
 INCDIRS=-I$(SYSDIR)/libsam -I$(SYSDIR)/CMSIS/CMSIS/Include/ -I$(SYSDIR)/CMSIS/Device/ATMEL/ -I$(SAMDIR)/cores/arduino -I$(SAMDIR)/variants/arduino_due_x
 CFLAGS=-g -Os -w -ffunction-sections -fdata-sections -nostdlib --param max-inline-insns-single=500 -Dprintf=iprintf -mcpu=cortex-m3 -DF_CPU=84000000L -DARDUINO=152 -D__SAM3X8E__ -mthumb -DUSB_PID=0x003e -DUSB_VID=0x2341 -DUSBCON
 CXXFLAGS=-g -Os -w -ffunction-sections -fdata-sections -nostdlib --param max-inline-insns-single=500 -fno-rtti -fno-exceptions -Dprintf=iprintf -mcpu=cortex-m3 -DF_CPU=84000000L -DARDUINO=152 -D__SAM3X8E__ -mthumb -DUSB_PID=0x003e -DUSB_VID=0x2341 -DUSBCON
@@ -12,7 +18,8 @@ LINKFLAGS=-Os -Wl,--gc-sections -mcpu=cortex-m3 -T/home/michael/Documents/Progra
 program.cpp.elf: test.c
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c -o program.o test.c
 
-	$(CXX) $(LINKFLAGS) -Wl,-Map,program.cpp.map -o program.cpp.elf -lm -lgcc -mthumb -Wl,--start-group syscalls_sam3.c.o program.o /home/michael/Documents/Programming/arduino/Arduino/build/linux/work/hardware/arduino/sam/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a core.a -Wl,--end-group 
+	$(CXX) $(LINKFLAGS) -Wl,-Map,program.cpp.map -o program.cpp.elf -lm -lgcc -mthumb -Wl,--start-group syscalls_sam3.c.o program.o $(SAMDIR)/variants/arduino_due_x/libsam_sam3x8e_gcc_rel.a core.a -Wl,--end-group 
+	$(CXXOBJCOPY) -O binary program.cpp.elf program.cpp.bin
 
 core.a:
 	$(CC) -c $(CFLAGS) $(INCDIRS) $(SAMDIR)/cores/arduino/hooks.c -o hooks.c.o
